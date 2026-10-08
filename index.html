@@ -409,6 +409,36 @@
       background: #f5f6f8;
     }
     .footer a { color: #1e40af; }
+
+    @media (max-width: 640px) {
+      body {
+        display: flex;
+        flex-direction: column;
+        padding: 16px 16px 88px;
+      }
+      .page {
+        display: contents;
+      }
+      .steps {
+        order: 1;
+        margin-bottom: 8px;
+      }
+      .toolbar {
+        position: static;
+        top: auto;
+        right: auto;
+        order: 2;
+        justify-content: center;
+        margin: 0 0 20px;
+        z-index: 1;
+      }
+      .scene {
+        order: 3;
+      }
+      .toast {
+        bottom: 64px;
+      }
+    }
   </style>
 </head>
 <body>
