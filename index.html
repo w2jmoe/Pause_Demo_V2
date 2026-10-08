@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>先停 PAUSE · 企业付款确认演示</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f6f8;
+      color: #111827;
+      padding: 32px 24px 72px;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .toolbar {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      display: flex;
+      gap: 8px;
+    }
+    .toolbar button {
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #1f2937;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .toolbar button:hover { background: #f9fafb; }
+    .toolbar button.stop {
+      background: #1e40af;
+      color: #fff;
+      border-color: #1e40af;
+    }
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .steps .step {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #eef0f3;
+    }
+    .steps .step.active {
+      background: #1e40af;
+      color: #fff;
+    }
+    .scene { display: none; }
+    .scene.active { display: block; animation: fade 0.3s ease; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes drop { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+
+    .browser {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+    .browser-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f3f4f6;
+      padding: 10px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 13px;
+      color: #4b5563;
+    }
+    .dots { display: flex; gap: 6px; }
+    .dots span {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: block;
+    }
+    .dots .r { background: #ef4444; }
+    .dots .y { background: #eab308; }
+    .dots .g { background: #22c55e; }
+    .browser-title { margin-left: 8px; }
+    .form-body { padding: 32px 36px 36px; }
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+    .field .value {
+      font-size: 16px;
+      padding: 10px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+    }
+    .risk {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin: 8px 0 22px;
+    }
+    .btn {
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .btn-primary {
+      width: 100%;
+      background: #1e40af;
+      color: #fff;
+      padding: 14px 20px;
+    }
+    .btn-primary:disabled { opacity: 0.85; cursor: default; }
+    .hint {
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: -2px;
+      margin-right: 8px;
+    }
+
+    .phone-wrap {
+      display: flex;
+      justify-content: center;
+    }
+    .phone {
+      width: 380px;
+      height: 720px;
+      background: #111;
+      border-radius: 36px;
+      padding: 12px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    }
+    .phone-inner {
+      background: #f3f4f6;
+      height: 100%;
+      border-radius: 26px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px 6px;
+      font-size: 12px;
+      color: #111;
+      position: relative;
+    }
+    .notch {
+      position: absolute;
+      left: 50%;
+      top: 6px;
+      transform: translateX(-50%);
+      width: 92px;
+      height: 18px;
+      background: #111;
+      border-radius: 12px;
+    }
+    .battery {
+      width: 22px;
+      height: 10px;
+      border: 1.5px solid #111;
+      border-radius: 2px;
+      position: relative;
+      display: inline-block;
+    }
+    .battery::after {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 2px;
+      width: 2px;
+      height: 4px;
+      background: #111;
+      border-radius: 0 1px 1px 0;
+    }
+    .battery i {
+      display: block;
+      height: 100%;
+      width: 70%;
+      background: #111;
+    }
+    .phone-content {
+      flex: 1;
+      padding: 18px 16px 16px;
+      position: relative;
+    }
+    .push {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+      font-size: 14px;
+      cursor: pointer;
+      animation: drop 0.3s ease;
+    }
+    .confirm-page, .reject-page, .success-page {
+      display: none;
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px 18px 16px;
+      height: 100%;
+      flex-direction: column;
+    }
+    .confirm-page.show, .reject-page.show, .success-page.show { display: flex; }
+    .confirm-page h2, .reject-page h2 {
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 18px;
+    }
+    .amount {
+      text-align: center;
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 22px;
+    }
+    .meta { font-size: 14px; color: #374151; }
+    .meta p { margin-bottom: 10px; }
+    .meta span { color: #6b7280; }
+    .risk-mini {
+      font-size: 12px;
+      color: #c2410c;
+      margin: 8px 0 18px;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+    .btn-ok {
+      flex: 6;
+      background: #16a34a;
+      color: #fff;
+      padding: 13px 8px;
+    }
+    .btn-no {
+      flex: 4;
+      background: #fff;
+      color: #dc2626;
+      border: 1.5px solid #dc2626;
+      padding: 13px 8px;
+    }
+    .timeout {
+      text-align: center;
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .reject-page {
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+    }
+    .reject-page p { font-size: 16px; line-height: 1.6; color: #374151; }
+    .btn-back {
+      background: #1e40af;
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+    }
+    .success-page {
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+    }
+    .success-mark {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: #16a34a;
+      font-size: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      animation: pop 0.3s ease;
+    }
+    .success-page h3 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .success-page p {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.8;
+    }
+
+    .voucher {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 36px 40px 28px;
+      max-width: 720px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .stamp {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: #16a34a;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .voucher h2 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 24px;
+    }
+    .voucher dl {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 10px 12px;
+      font-size: 14px;
+    }
+    .voucher dt { color: #6b7280; }
+    .voucher dd { color: #111827; word-break: break-all; }
+    .note {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+    .voucher-btns {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 22px;
+    }
+    .voucher-btns .btn {
+      padding: 10px 18px;
+      font-size: 14px;
+    }
+    .btn-outline {
+      background: #fff;
+      border: 1px solid #1e40af;
+      color: #1e40af;
+    }
+    .btn-secondary {
+      background: #1e40af;
+      color: #fff;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 80px;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+      z-index: 200;
+      animation: fade 0.3s ease;
+    }
+    .toast.show { display: block; }
+    .footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      text-align: center;
+      font-size: 15px;
+      color: #6b7280;
+      padding: 14px;
+      background: #f5f6f8;
+    }
+    .footer a { color: #1e40af; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="autoBtn" type="button">▶ 自动演示</button>
+    <button id="resetBtn" type="button">↺ 重置</button>
+  </div>
+
+  <div class="page">
+    <div class="steps" id="steps">
+      <div class="step active" data-step="1">① 财务电脑端</div>
+      <div class="step" data-step="2">② 老板手机确认</div>
+      <div class="step" data-step="3">③ 留痕凭证</div>
+    </div>
+
+    <section class="scene active" id="scene1">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+          <div class="browser-title">企业付款确认系统</div>
+        </div>
+        <div class="form-body">
+          <div class="field">
+            <label>收款方户名</label>
+            <div class="value">乌鲁木齐天山建材有限公司</div>
+          </div>
+          <div class="field">
+            <label>收款账号</label>
+            <div class="value">6500 1234 5678 9012 345（招商银行乌鲁木齐分行）</div>
+          </div>
+          <div class="field">
+            <label>付款金额</label>
+            <div class="value">¥486,000.00</div>
+          </div>
+          <div class="field">
+            <label>付款用途</label>
+            <div class="value">采购货款（合同号 HT-2026-0917）</div>
+          </div>
+          <div class="risk">⚠️ 新增收款账户 · 金额超过审批阈值（¥100,000）</div>
+          <button class="btn btn-primary" id="sendBtn" type="button">发起先停确认</button>
+          <p class="hint">点击后，系统将向老板（王总）手机发送确认请求</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene" id="scene2">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="status-bar">
+              <span>14:32</span>
+              <div class="notch"></div>
+              <span class="battery"><i></i></span>
+            </div>
+            <div class="phone-content">
+              <div class="push" id="pushBanner">🔒 先停确认 · 财务请求支付 ¥486,000 — 点击查看详情</div>
+              <div class="confirm-page" id="confirmPage">
+                <h2>先停确认请求</h2>
+                <div class="amount">¥486,000.00</div>
+                <div class="meta">
+                  <p><span>收款方：</span>乌鲁木齐天山建材有限公司</p>
+                  <p><span>收款账号：</span>6500 **** **** 345</p>
+                  <p><span>发起人：</span>财务 · 武文杰</p>
+                  <p><span>发起时间：</span>2026-10-08 14:32</p>
+                </div>
+                <div class="risk-mini">新增收款账户 · 大额转账</div>
+                <div class="actions">
+                  <button class="btn btn-ok" id="approveBtn" type="button">✓ 确认付款</button>
+                  <button class="btn btn-no" id="rejectBtn" type="button">✕ 拒绝</button>
+                </div>
+                <p class="timeout">请于 5 分钟内确认，超时将短信再次提醒</p>
+              </div>
+              <div class="reject-page" id="rejectPage">
+                <h2>先停确认</h2>
+                <p>❌ 已拒绝，拒绝记录已留痕，财务将收到通知</p>
+                <button class="btn btn-back" id="rejectBackBtn" type="button">返回重新演示</button>
+              </div>
+              <div class="success-page" id="successPage">
+                <div class="success-mark">✓</div>
+                <h3>✓ 确认成功</h3>
+                <p>王总 · 老板本人手机 · 锁屏验证通过</p>
+                <p>确认记录已同步至财务端</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene" id="scene3">
+      <div class="voucher">
+        <div class="stamp">✓</div>
+        <h2>✓ 老板已确认 · 付款放行</h2>
+        <dl>
+          <dt>凭证编号</dt>
+          <dd>PAUSE-20261008-0001</dd>
+          <dt>确认人</dt>
+          <dd>王总（老板本人手机 · 锁屏验证通过）</dd>
+          <dt>确认时间</dt>
+          <dd>2026-10-08 14:33:05</dd>
+          <dt>付款金额</dt>
+          <dd>¥486,000.00</dd>
+          <dt>收款方</dt>
+          <dd>乌鲁木齐天山建材有限公司</dd>
+          <dt>数据摘要（防篡改）</dt>
+          <dd>SHA-256: a3f8c92e1b47d605f2e8a1c4b9d3f7e2a6c8b1d4f9e3a7c2b5d8f1e4a6c9b3d7</dd>
+        </dl>
+        <p class="note">本凭证由老板本人手机独立确认生成，不可篡改，可作为付款放行依据</p>
+      </div>
+      <div class="voucher-btns">
+        <button class="btn btn-outline" id="exportBtn" type="button">导出 PDF 凭证</button>
+        <button class="btn btn-secondary" id="replayBtn" type="button">重新演示</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast">演示版暂不支持导出，正式版支持一键导出</div>
+  <div class="footer">
+    w2jmoe@gmail.com · <a href="https://w2jmoe.github.io/jay-portfolio" target="_blank">作品集</a>
+  </div>
+
+  <script>
+    const T_SEND = 1500;
+    const T_PUSH = 1500;
+    const T_CONFIRM = 4000;
+    const T_SUCCESS = 2500;
+
+    const timers = [];
+    let autoPlaying = false;
+    let toastTimer = null;
+
+    const sendBtn = document.getElementById("sendBtn");
+    const autoBtn = document.getElementById("autoBtn");
+    const toast = document.getElementById("toast");
+    const pushBanner = document.getElementById("pushBanner");
+    const confirmPage = document.getElementById("confirmPage");
+    const rejectPage = document.getElementById("rejectPage");
+    const successPage = document.getElementById("successPage");
+
+    function later(fn, ms) {
+      const id = setTimeout(fn, ms);
+      timers.push(id);
+      return id;
+    }
+
+    function clearTimers() {
+      timers.splice(0).forEach(clearTimeout);
+    }
+
+    function setStep(n) {
+      document.querySelectorAll(".steps .step").forEach(function (el) {
+        el.classList.toggle("active", Number(el.dataset.step) === n);
+      });
+      document.querySelectorAll(".scene").forEach(function (el, i) {
+        el.classList.toggle("active", i === n - 1);
+      });
+    }
+
+    function resetSendButton() {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = "发起先停确认";
+    }
+
+    function resetPhone() {
+      pushBanner.style.display = "block";
+      confirmPage.classList.remove("show");
+      rejectPage.classList.remove("show");
+      successPage.classList.remove("show");
+    }
+
+    function resetAll() {
+      stopAuto();
+      clearTimers();
+      resetSendButton();
+      resetPhone();
+      toast.classList.remove("show");
+      if (toastTimer) clearTimeout(toastTimer);
+      setStep(1);
+    }
+
+    function expandNotice() {
+      pushBanner.style.display = "none";
+      rejectPage.classList.remove("show");
+      successPage.classList.remove("show");
+      confirmPage.classList.add("show");
+    }
+
+    function goScene2() {
+      resetPhone();
+      setStep(2);
+      later(expandNotice, T_PUSH);
+    }
+
+    function startSend() {
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner"></span>已发送至老板手机，等待确认...';
+      later(goScene2, T_SEND);
+    }
+
+    function goScene3() {
+      setStep(3);
+      if (autoPlaying) stopAuto();
+    }
+
+    function approve() {
+      clearTimers();
+      pushBanner.style.display = "none";
+      confirmPage.classList.remove("show");
+      rejectPage.classList.remove("show");
+      successPage.classList.remove("show");
+      void successPage.offsetWidth;
+      successPage.classList.add("show");
+      later(goScene3, T_SUCCESS);
+    }
+
+    function reject() {
+      clearTimers();
+      pushBanner.style.display = "none";
+      confirmPage.classList.remove("show");
+      successPage.classList.remove("show");
+      rejectPage.classList.add("show");
+    }
+
+    function showToast() {
+      toast.classList.add("show");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toast.classList.remove("show");
+      }, 2000);
+    }
+
+    function stopAuto() {
+      autoPlaying = false;
+      autoBtn.textContent = "▶ 自动演示";
+      autoBtn.classList.remove("stop");
+    }
+
+    function startAuto() {
+      resetAll();
+      autoPlaying = true;
+      autoBtn.textContent = "■ 停止";
+      autoBtn.classList.add("stop");
+      startSend();
+      later(function () {
+        if (!autoPlaying) return;
+        expandNotice();
+      }, T_SEND + T_PUSH);
+      later(function () {
+        if (!autoPlaying) return;
+        approve();
+      }, T_SEND + T_PUSH + T_CONFIRM);
+    }
+
+    sendBtn.addEventListener("click", startSend);
+    pushBanner.addEventListener("click", function () {
+      clearTimers();
+      expandNotice();
+    });
+    document.getElementById("approveBtn").addEventListener("click", approve);
+    document.getElementById("rejectBtn").addEventListener("click", reject);
+    document.getElementById("rejectBackBtn").addEventListener("click", resetAll);
+    document.getElementById("exportBtn").addEventListener("click", showToast);
+    document.getElementById("replayBtn").addEventListener("click", resetAll);
+    document.getElementById("resetBtn").addEventListener("click", resetAll);
+    autoBtn.addEventListener("click", function () {
+      if (autoPlaying) {
+        resetAll();
+      } else {
+        startAuto();
+      }
+    });
+  </script>
+</body>
+</html>
