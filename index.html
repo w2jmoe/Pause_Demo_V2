@@ -410,48 +410,39 @@
     }
     .footer a { color: #1e40af; }
 
-    @media (max-width: 640px) {
+    @media (max-width: 900px), (hover: none) and (pointer: coarse) {
       body {
-        display: flex;
-        flex-direction: column;
-        padding: 16px 16px 88px;
-      }
-      .page {
-        display: contents;
-      }
-      .steps {
-        order: 1;
-        margin-bottom: 8px;
+        padding: 16px 16px 128px;
       }
       .toolbar {
-        position: static;
+        position: fixed;
         top: auto;
         right: auto;
-        order: 2;
+        left: 0;
+        bottom: 52px;
+        width: 100%;
         justify-content: center;
-        margin: 0 0 20px;
-        z-index: 1;
-      }
-      .scene {
-        order: 3;
+        z-index: 150;
       }
       .toast {
-        bottom: 64px;
+        bottom: 108px;
+      }
+      .footer {
+        z-index: 140;
       }
     }
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <button id="autoBtn" type="button">▶ 自动演示</button>
-    <button id="resetBtn" type="button">↺ 重置</button>
-  </div>
-
   <div class="page">
     <div class="steps" id="steps">
       <div class="step active" data-step="1">① 财务电脑端</div>
       <div class="step" data-step="2">② 老板手机确认</div>
       <div class="step" data-step="3">③ 留痕凭证</div>
+    </div>
+    <div class="toolbar">
+      <button id="autoBtn" type="button">▶ 自动演示</button>
+      <button id="resetBtn" type="button">↺ 重置</button>
     </div>
 
     <section class="scene active" id="scene1">
